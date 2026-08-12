@@ -64,6 +64,7 @@
             <p class="mini-label">EMAIL ADDRESS</p>
             <strong>hello@company.com</strong>
             <div class="check-line"><span>✓</span> Syntax is correctly formatted</div>
+            <div class="check-line"><span>✓</span> Domain exists</div>
             <div class="check-line"><span>✓</span> Permanent email provider</div>
             <div class="check-line"><span>✓</span> Mail server found</div>
           </div>
@@ -136,9 +137,10 @@
         </div>
         <div class="flow-grid">
           <article><span class="step-number">01</span><div class="step-icon">Aa</div><h3>Syntax</h3><p>Validate structure in the browser with no network request or perceived delay.</p></article>
-          <article><span class="step-number">02</span><div class="step-icon">⌁</div><h3>Disposable</h3><p>Compare the normalized domain against an auditable provider dataset.</p></article>
-          <article><span class="step-number">03</span><div class="step-icon">MX</div><h3>Mail routing</h3><p>Resolve MX records, null MX declarations, and standards-aware A/AAAA fallback.</p></article>
-          <article><span class="step-number">04</span><div class="step-icon">↗</div><h3>Decision</h3><p>Block known bad results and fail open when verification infrastructure is unavailable.</p></article>
+          <article><span class="step-number">02</span><div class="step-icon">DNS</div><h3>Domain</h3><p>Distinguish an existing DNS name from NXDOMAIN and temporary lookup failures.</p></article>
+          <article><span class="step-number">03</span><div class="step-icon">⌁</div><h3>Disposable</h3><p>Compare the normalized domain against an auditable provider dataset.</p></article>
+          <article><span class="step-number">04</span><div class="step-icon">MX</div><h3>Mail routing</h3><p>Resolve MX records, null MX declarations, and standards-aware A/AAAA fallback.</p></article>
+          <article><span class="step-number">05</span><div class="step-icon">↗</div><h3>Decision</h3><p>Block known bad results and fail open when verification infrastructure is unavailable.</p></article>
         </div>
       </section>
 

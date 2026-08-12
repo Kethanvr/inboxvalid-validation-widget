@@ -1,4 +1,5 @@
 export type VerificationStatus = "valid" | "invalid" | "disposable" | "unknown";
+export type DomainStatus = "exists" | "not_found" | "unknown";
 
 export type VerificationSubStatus =
   | "invalid_syntax"
@@ -14,6 +15,7 @@ export interface VerificationResponse {
   domain: string;
   status: VerificationStatus;
   sub_status: VerificationSubStatus;
+  domain_status: DomainStatus;
   mx_found: boolean | null;
   mx_host: string | null;
   fallback_address_found: boolean | null;

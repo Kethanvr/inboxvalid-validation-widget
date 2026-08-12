@@ -207,7 +207,9 @@ export class InboxValidWidget {
         ? `Mail server found: ${result.mx_host}`
         : STATE_COPY.valid.message,
       invalid:
-        result.sub_status === "null_mx"
+        result.domain_status === "not_found"
+          ? "Domain does not exist."
+          : result.sub_status === "null_mx"
           ? "This domain explicitly does not accept email."
           : "No mail server was found for this domain.",
       disposable: STATE_COPY.disposable.message,
@@ -217,6 +219,7 @@ export class InboxValidWidget {
           : STATE_COPY.unknown.message,
     };
     this.setState(result.status, messages[result.status]);
+    this.renderChecks(result);
   }
 
   private setState(state: WidgetState, message = STATE_COPY[state].message): void {
@@ -233,7 +236,10 @@ export class InboxValidWidget {
     icon.textContent = STATE_COPY[state].icon;
     const text = document.createElement("span");
     text.textContent = message;
-    this.feedback.replaceChildren(icon, text);
+    const summary = document.createElement("div");
+    summary.className = "iv-feedback__summary";
+    summary.append(icon, text);
+    this.feedback.replaceChildren(summary);
 
     if (this.suggestion && state !== "valid") {
       const suggestion = document.createElement("button");
@@ -247,5 +253,40 @@ export class InboxValidWidget {
       });
       text.append(" Did you mean ", suggestion, "?");
     }
+  }
+
+  private renderChecks(result: VerificationResponse): void {
+    const checks = document.createElement("ul");
+    checks.className = "iv-feedback__checks";
+
+    const rows: Array<{ state: "pass" | "fail" | "unknown"; text: string }> = [
+      { state: "pass", text: "Syntax is correctly formatted" },
+      result.domain_status === "exists"
+        ? { state: "pass", text: "Domain exists" }
+        : result.domain_status === "not_found"
+          ? { state: "fail", text: "Domain does not exist" }
+          : { state: "unknown", text: "Domain check unavailable" },
+      result.is_disposable === false
+        ? { state: "pass", text: "Permanent email provider" }
+        : result.is_disposable === true
+          ? { state: "fail", text: "Disposable email detected" }
+          : { state: "unknown", text: "Provider type unavailable" },
+      result.mx_found === true
+        ? { state: "pass", text: result.mx_host ? `Mail server found: ${result.mx_host}` : "Mail server found" }
+        : result.domain_status === "not_found" || result.sub_status === "null_mx" || result.sub_status === "no_mail_server"
+          ? { state: "fail", text: "No mail routing available" }
+          : { state: "unknown", text: "Mail routing could not be confirmed" },
+    ];
+
+    for (const row of rows) {
+      const item = document.createElement("li");
+      item.dataset.state = row.state;
+      const marker = document.createElement("span");
+      marker.setAttribute("aria-hidden", "true");
+      marker.textContent = row.state === "pass" ? "✓" : row.state === "fail" ? "×" : "?";
+      item.append(marker, row.text);
+      checks.append(item);
+    }
+    this.feedback.append(checks);
   }
 }

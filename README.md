@@ -125,6 +125,7 @@ Example response:
   "domain": "example.com",
   "status": "valid",
   "sub_status": null,
+  "domain_status": "exists",
   "mx_found": true,
   "mx_host": "mx.example.com",
   "fallback_address_found": null,
@@ -134,6 +135,14 @@ Example response:
 ```
 
 Possible `status` values are `valid`, `invalid`, `disposable`, and `unknown`. Possible non-null `sub_status` values are:
+
+`domain_status` is an independent DNS signal:
+
+| Domain status | Meaning |
+| --- | --- |
+| `exists` | DNS confirmed the name, even if it has no mail-routing records |
+| `not_found` | DNS returned NXDOMAIN / `ENOTFOUND` |
+| `unknown` | A timeout or operational DNS failure prevented confirmation |
 
 | Sub-status | Meaning | Form decision |
 | --- | --- | --- |
@@ -151,18 +160,20 @@ The response intentionally follows InboxValid-style naming so a production endpo
 ## DNS decision model
 
 ```text
-MX records found             -> valid
-MX 0 . (null MX)             -> invalid
-No MX + A or AAAA found      -> unknown / plausible / fail open
-No MX, A, or AAAA            -> invalid
-DNS timeout or service error -> unknown / fail open
+MX query succeeds / ENODATA  -> domain exists
+NXDOMAIN / ENOTFOUND         -> domain not found
+DNS timeout or SERVFAIL      -> domain unknown / fail open
+MX records found             -> mail routing valid
+MX 0 . (null MX)             -> mail routing invalid
+No MX + A or AAAA found      -> mail routing plausible / fail open
+No MX, A, or AAAA            -> no mail routing
 ```
 
-An address record fallback only establishes domain-level plausibility. It does not prove that the individual mailbox exists.
+Domain existence and mail capability are reported separately. An existing DNS name can intentionally have no mail service, and an address-record fallback only establishes routing plausibility. Neither signal proves that the individual mailbox exists.
 
 ## Technical limits
 
-This prototype implements syntax checking, a small auditable disposable-domain dataset, typo suggestions, MX lookup, null MX detection, and A/AAAA fallback. It deliberately does **not** perform SMTP mailbox probing, catch-all detection, mailbox-level deliverability, production risk scoring, or private InboxValid API calls.
+This prototype implements syntax checking, DNS domain-existence classification, a small auditable disposable-domain dataset, typo suggestions, MX lookup, null MX detection, and A/AAAA fallback. It deliberately does **not** perform WHOIS/RDAP registration checks, SMTP mailbox probing, catch-all detection, mailbox-level deliverability, production risk scoring, or private InboxValid API calls.
 
 The disposable dataset is illustrative rather than exhaustive. A production version should use a maintained provider feed or the production InboxValid service. No signup data is stored, and the demo is marked `noindex,nofollow`.
 

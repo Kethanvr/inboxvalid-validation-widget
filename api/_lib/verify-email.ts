@@ -5,7 +5,8 @@ import { parseEmail, suggestEmail } from "../../src/shared/email.ts";
 import type { VerificationResponse } from "../../src/shared/types.ts";
 
 const DNS_TIMEOUT_MS = 2_000;
-const ABSENT_DNS_CODES = new Set(["ENODATA", "ENOTFOUND"]);
+const NO_DATA_CODE = "ENODATA";
+const NOT_FOUND_CODE = "ENOTFOUND";
 
 export interface DnsResolver {
   resolveMx(domain: string): Promise<MxRecord[]>;
@@ -27,8 +28,12 @@ function responseBase(email: string, domain: string) {
   };
 }
 
-function isAbsentDnsError(error: unknown): boolean {
-  return ABSENT_DNS_CODES.has((error as DnsError | undefined)?.code ?? "");
+function dnsErrorCode(error: unknown): string {
+  return (error as DnsError | undefined)?.code ?? "";
+}
+
+function isAbsentRecordError(error: unknown): boolean {
+  return [NO_DATA_CODE, NOT_FOUND_CODE].includes(dnsErrorCode(error));
 }
 
 async function withTimeout<T>(promise: Promise<T>): Promise<T> {
@@ -55,7 +60,7 @@ async function resolveAddress(promise: Promise<string[]>): Promise<AddressLookup
     const addresses = await withTimeout(promise);
     return addresses.length > 0 ? "found" : "absent";
   } catch (error) {
-    return isAbsentDnsError(error) ? "absent" : "error";
+    return isAbsentRecordError(error) ? "absent" : "error";
   }
 }
 
@@ -83,6 +88,7 @@ export async function verifyEmail(
       ...responseBase(rawEmail.trim(), ""),
       status: "invalid",
       sub_status: "invalid_syntax",
+      domain_status: "unknown",
       mx_found: null,
       mx_host: null,
       fallback_address_found: null,
@@ -91,28 +97,48 @@ export async function verifyEmail(
   }
 
   const suggestion = suggestEmail(parsed.email);
-  if (isDisposableDomain(parsed.domain)) {
-    return {
-      ...responseBase(parsed.email, parsed.domain),
-      status: "disposable",
-      sub_status: "disposable_domain",
-      mx_found: null,
-      mx_host: null,
-      fallback_address_found: null,
-      is_disposable: true,
-      ...(suggestion ? { suggestion } : {}),
-    };
-  }
+  const disposable = isDisposableDomain(parsed.domain);
 
   let records: MxRecord[];
+  let domainStatus: "exists" | "not_found" | "unknown" = "exists";
   try {
     records = await withTimeout(resolver.resolveMx(parsed.domain));
   } catch (error) {
-    if (!isAbsentDnsError(error)) {
+    const code = dnsErrorCode(error);
+    if (code === NOT_FOUND_CODE) {
+      domainStatus = "not_found";
+      return {
+        ...responseBase(parsed.email, parsed.domain),
+        status: "invalid",
+        sub_status: "no_mail_server",
+        domain_status: domainStatus,
+        mx_found: false,
+        mx_host: null,
+        fallback_address_found: false,
+        is_disposable: disposable,
+        ...(suggestion ? { suggestion } : {}),
+      };
+    }
+    if (code !== NO_DATA_CODE) {
+      domainStatus = "unknown";
+      if (disposable) {
+        return {
+          ...responseBase(parsed.email, parsed.domain),
+          status: "disposable",
+          sub_status: "disposable_domain",
+          domain_status: domainStatus,
+          mx_found: null,
+          mx_host: null,
+          fallback_address_found: null,
+          is_disposable: true,
+          ...(suggestion ? { suggestion } : {}),
+        };
+      }
       return {
         ...responseBase(parsed.email, parsed.domain),
         status: "unknown",
         sub_status: "dns_unavailable",
+        domain_status: domainStatus,
         mx_found: null,
         mx_host: null,
         fallback_address_found: null,
@@ -123,6 +149,23 @@ export async function verifyEmail(
     records = [];
   }
 
+  if (disposable) {
+    const preferredMx = records
+      .filter(({ exchange }) => exchange.trim() && exchange.trim() !== ".")
+      .sort((first, second) => first.priority - second.priority)[0];
+    return {
+      ...responseBase(parsed.email, parsed.domain),
+      status: "disposable",
+      sub_status: "disposable_domain",
+      domain_status: domainStatus,
+      mx_found: preferredMx ? true : records.length > 0 ? false : null,
+      mx_host: preferredMx?.exchange ?? null,
+      fallback_address_found: null,
+      is_disposable: true,
+      ...(suggestion ? { suggestion } : {}),
+    };
+  }
+
   const nullMx = records.some(
     ({ exchange, priority }) => priority === 0 && ["", "."].includes(exchange.trim()),
   );
@@ -131,6 +174,7 @@ export async function verifyEmail(
       ...responseBase(parsed.email, parsed.domain),
       status: "invalid",
       sub_status: "null_mx",
+      domain_status: domainStatus,
       mx_found: false,
       mx_host: null,
       fallback_address_found: false,
@@ -148,6 +192,7 @@ export async function verifyEmail(
       ...responseBase(parsed.email, parsed.domain),
       status: "valid",
       sub_status: null,
+      domain_status: domainStatus,
       mx_found: true,
       mx_host: preferredMx.exchange,
       fallback_address_found: null,
@@ -162,6 +207,7 @@ export async function verifyEmail(
       ...responseBase(parsed.email, parsed.domain),
       status: "unknown",
       sub_status: "implicit_mx",
+      domain_status: domainStatus,
       mx_found: false,
       mx_host: null,
       fallback_address_found: true,
@@ -175,6 +221,7 @@ export async function verifyEmail(
       ...responseBase(parsed.email, parsed.domain),
       status: "unknown",
       sub_status: "dns_unavailable",
+      domain_status: domainStatus,
       mx_found: false,
       mx_host: null,
       fallback_address_found: null,
@@ -187,6 +234,7 @@ export async function verifyEmail(
     ...responseBase(parsed.email, parsed.domain),
     status: "invalid",
     sub_status: "no_mail_server",
+    domain_status: domainStatus,
     mx_found: false,
     mx_host: null,
     fallback_address_found: false,

@@ -14,6 +14,7 @@ function isVerificationResponse(value: unknown): value is VerificationResponse {
     typeof candidate.email === "string" &&
     typeof candidate.domain === "string" &&
     ["valid", "invalid", "disposable", "unknown"].includes(candidate.status ?? "") &&
+    ["exists", "not_found", "unknown"].includes(candidate.domain_status ?? "") &&
     typeof candidate.verified_at === "string"
   );
 }

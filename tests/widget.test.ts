@@ -9,6 +9,7 @@ function response(overrides: Partial<VerificationResponse> = {}): VerificationRe
     domain: "example.com",
     status: "valid",
     sub_status: null,
+    domain_status: "exists",
     mx_found: true,
     mx_host: "mx.example.com",
     fallback_address_found: null,
@@ -150,6 +151,39 @@ describe("InboxValidWidget", () => {
     expect(document.querySelector(".iv-feedback")?.textContent).toContain(
       "Disposable email detected — use a permanent address.",
     );
+  });
+
+  it("renders domain existence independently from mail routing", async () => {
+    vi.mocked(fetch).mockResolvedValue(fetchResponse(response()));
+    const { input } = setup({ debounceMs: 0 });
+    input.value = "person@example.com";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(0);
+    const checks = document.querySelector(".iv-feedback__checks")?.textContent;
+    expect(checks).toContain("Domain exists");
+    expect(checks).toContain("Mail server found: mx.example.com");
+  });
+
+  it("distinguishes a nonexistent domain from an unavailable lookup", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      fetchResponse(
+        response({
+          status: "invalid",
+          sub_status: "no_mail_server",
+          domain_status: "not_found",
+          mx_found: false,
+          mx_host: null,
+          fallback_address_found: false,
+        }),
+      ),
+    );
+    const { input } = setup({ debounceMs: 0 });
+    input.value = "person@example.com";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(0);
+    const feedback = document.querySelector(".iv-feedback")?.textContent;
+    expect(feedback).toContain("Domain does not exist");
+    expect(feedback).toContain("No mail routing available");
   });
 
   it("prevents stale responses from replacing the latest state", async () => {
