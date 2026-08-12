@@ -111,7 +111,7 @@ export class InboxValidWidget {
       } finally {
         if (this.timeoutId) clearTimeout(this.timeoutId);
         if (this.controller === controller) this.controller = undefined;
-        if (this.activeRequest === execution) this.activeRequest = undefined;
+        if (this.controller === undefined) this.activeRequest = undefined;
       }
     })();
 
