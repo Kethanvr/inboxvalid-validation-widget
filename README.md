@@ -13,17 +13,11 @@ A zero-runtime-dependency email-validation widget that enhances existing signup 
 
 ## Product walkthrough
 
-The public demo exposes the real widget lifecycle, edge states, integration contract, and prototype boundaries. Select any screenshot to open the full-resolution image.
+<a href="public/Screenshot%20from%202026-08-12%2015-53-26.png">
+  <img src="public/Screenshot%20from%202026-08-12%2015-53-26.png" alt="Live email validation showing a plausible result" width="100%">
+</a>
 
-| Live validation                                                     | Validation pipeline                                                 |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| <a href="public/Screenshot%20from%202026-08-12%2015-53-26.png"></a> | <a href="public/Screenshot%20from%202026-08-12%2015-53-33.png"></a> |
-| **Six explicit states**                                       | **One-attribute integration**                                 |
-| <a href="public/Screenshot%20from%202026-08-12%2015-53-50.png"></a> | <a href="public/Screenshot%20from%202026-08-12%2015-53-56.png"></a> |
-
-<a href="public/Screenshot from 2026-08-12 15-53-26.png"> </a>
-
-The final view makes the product boundary explicit: the prototype validates syntax, domain existence, provider type, and DNS mail routing, but does not claim that an individual mailbox exists.
+The live demo shows the real validation lifecycle and makes the product boundary explicit: the prototype validates syntax, domain existence, provider type, and DNS mail routing, but does not claim that an individual mailbox exists.
 
 ### Tech stack
 
