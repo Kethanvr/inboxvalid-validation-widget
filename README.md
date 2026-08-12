@@ -1,6 +1,45 @@
 # InboxValid Real-Time Validation Widget
 
-A zero-runtime-dependency email-validation widget and demonstration website. It adds immediate syntax feedback to an existing email input, then checks disposable providers and real DNS mail-routing signals through a small API.
+A zero-runtime-dependency email-validation widget that enhances existing signup and contact forms with immediate syntax feedback, disposable-domain detection, and real DNS/MX mail-routing checks.
+
+### Project endpoints
+
+- **Demo:** `https://validate.kethanvr.tech` 
+- **Widget bundle:** `https://validate.kethanvr.tech/inboxvalid.js`
+
+### Tech stack
+
+TypeScript · Vanilla DOM · Vite · Node.js · Vercel Functions · DNS · Vitest
+
+## Architecture Overview
+
+```mermaid
+flowchart LR
+    U[User types an email] --> W[InboxValid Widget]
+    W --> S[Local syntax validation]
+
+    S -->|Malformed| I[Show invalid immediately]
+    S -->|Plausible syntax| D[200 ms debounce]
+    D --> C{Cached result?}
+
+    C -->|Yes| R[Reuse cached result]
+    C -->|No| A["POST /api/verify"]
+    A --> V[Stateless verification API]
+
+    V --> DP[Disposable-domain check]
+    V --> DNS[DNS resolver]
+    DNS --> MX[MX lookup]
+    MX -->|No MX| IP["A / AAAA fallback"]
+
+    DP --> RESULT[Verification response]
+    MX --> RESULT
+    IP --> RESULT
+    RESULT --> W
+
+    W -->|Known invalid| BLOCK[Block submission]
+    W -->|Plausible| ALLOW[Allow submission]
+    W -->|Timeout or DNS failure| OPEN[Fail open]
+```
 
 ## Run locally
 
@@ -98,6 +137,52 @@ Configuration precedence is JavaScript options, input data attributes, loader-sc
 - Client timeout, network failure, DNS failure, and plausible A/AAAA fallback resolve to `unknown`, clear native validity, and fail open.
 - Status is announced through an ARIA live region and is not communicated by color alone.
 
+## Validation Sequence
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Input as Email Input
+    participant Widget as inboxvalid.js
+    participant API as /api/verify
+    participant DNS as DNS Resolver
+
+    User->>Input: Types person@example.com
+    Input->>Widget: input event
+    Widget->>Widget: Normalize and check syntax
+
+    alt Invalid syntax
+        Widget-->>Input: Show invalid immediately
+    else Plausible syntax
+        Widget->>Widget: Debounce for 200 ms
+        Widget->>Widget: Check bounded memory cache
+
+        alt Cached result
+            Widget-->>Input: Render cached result
+        else New verification
+            Widget->>API: POST email
+            par Independent provider signal
+                API->>API: Check disposable-domain list
+            and DNS signals
+                API->>DNS: Resolve MX
+            end
+
+            alt MX records found
+                DNS-->>API: MX hosts and priorities
+                API-->>Widget: Domain and routing plausible
+            else No MX record
+                API->>DNS: Resolve A and AAAA
+                DNS-->>API: Address fallback result
+                API-->>Widget: Plausible, unknown, or invalid
+            else DNS operational failure
+                API-->>Widget: Unknown
+            end
+
+            Widget-->>Input: Update accessible result state
+        end
+    end
+```
+
 ### Options
 
 | JavaScript | Data attribute | Default | Accepted range |
@@ -159,7 +244,42 @@ The endpoint supports credential-free CORS for third-party embedding. Validation
 
 The response intentionally follows InboxValid-style naming so a production endpoint can replace the prototype API with a small adapter rather than a widget rewrite.
 
-## DNS decision model
+## DNS & Mail Routing Decision Flow
+
+```mermaid
+flowchart TD
+    E[Email received] --> P{Syntax valid?}
+    P -->|No| IS[Invalid syntax]
+    P -->|Yes| X[Extract normalized domain]
+
+    X --> DD[Check disposable-domain list]
+    X --> MX[Resolve MX]
+
+    MX -->|Records found| FOUND[Domain exists and mail routing found]
+    MX -->|Null MX: MX 0 .| NULL[Domain exists but explicitly accepts no mail]
+    MX -->|ENODATA or no MX| FALLBACK[Resolve A and AAAA]
+    MX -->|NXDOMAIN / ENOTFOUND| NX[Domain not found]
+    MX -->|Timeout / SERVFAIL| FAIL[Domain and routing unknown]
+
+    FALLBACK -->|Address exists| IMPLICIT[Domain exists; implicit MX plausible]
+    FALLBACK -->|No address records| NOMAIL[Domain exists but no mail route]
+    FALLBACK -->|Operational failure| UNKNOWN[Routing unavailable]
+
+    DD --> DECIDE[Combine independent signals]
+    FOUND --> DECIDE
+    NULL --> DECIDE
+    NX --> DECIDE
+    FAIL --> DECIDE
+    IMPLICIT --> DECIDE
+    NOMAIL --> DECIDE
+    UNKNOWN --> DECIDE
+
+    DECIDE -->|Disposable, NXDOMAIN, null MX, or no route| BLOCK[Block]
+    DECIDE -->|MX found| ALLOW[Plausible - allow]
+    DECIDE -->|Implicit MX or operational failure| OPEN[Unknown - fail open]
+```
+
+### Decision summary
 
 ```text
 MX query succeeds / ENODATA  -> domain exists
@@ -256,6 +376,27 @@ At larger volume, preserve the existing interfaces and add:
 The automated suite covers parsing, normalization, typo suggestions, cache expiry and eviction, configuration precedence, debounce, cancellation, stale responses, submission resumption, timeout/fail-open behavior, accessible status output, CORS, malformed requests, and DNS cases including MX priority, null MX, ENODATA, NXDOMAIN, A/AAAA fallback, SERVFAIL, and timeout.
 
 The production build is also checked as a standalone IIFE from a separate local origin to verify that script-origin endpoint discovery and cross-origin API requests work outside the demo page.
+
+## Deployment Architecture
+
+```mermaid
+flowchart TB
+    GH[Private GitHub repository] --> V[Vercel deployment]
+
+    V --> WEB[Static demo website]
+    V --> JS["/inboxvalid.js IIFE bundle"]
+    V --> API["/api/verify serverless function"]
+
+    DOMAIN[validate.kethanvr.tech] --> V
+    HOST[Third-party website] --> INPUT[input data-inboxvalid]
+    HOST --> JS
+    JS --> API
+    API --> DNS[Public DNS infrastructure]
+    DNS --> API
+    API --> JS
+```
+
+The deployment contains three separate deliverables: the demonstration website, the embeddable JavaScript library, and the stateless verification API. The host website does not need to share the demo's origin.
 
 ## Deploy to Vercel
 
