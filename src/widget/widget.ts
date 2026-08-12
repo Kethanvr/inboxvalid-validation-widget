@@ -10,7 +10,7 @@ export type WidgetState = "idle" | "checking" | VerificationStatus;
 const STATE_COPY: Record<WidgetState, { icon: string; message: string }> = {
   idle: { icon: "·", message: "Enter a work email to validate it." },
   checking: { icon: "", message: "Checking mail routing…" },
-  valid: { icon: "✓", message: "Email domain can receive mail." },
+  valid: { icon: "✓", message: "Email is plausible." },
   invalid: { icon: "!", message: "This email cannot receive mail." },
   disposable: { icon: "!", message: "Disposable email detected — use a permanent address." },
   unknown: { icon: "?", message: "Verification unavailable — safe to continue." },
@@ -203,9 +203,7 @@ export class InboxValidWidget {
   private applyResult(result: VerificationResponse): void {
     this.suggestion = result.suggestion ?? this.suggestion;
     const messages: Record<VerificationStatus, string> = {
-      valid: result.mx_host
-        ? `Mail server found: ${result.mx_host}`
-        : STATE_COPY.valid.message,
+      valid: "Email is plausible — domain-level checks passed.",
       invalid:
         result.domain_status === "not_found"
           ? "Domain does not exist."
@@ -276,6 +274,7 @@ export class InboxValidWidget {
         : result.domain_status === "not_found" || result.sub_status === "null_mx" || result.sub_status === "no_mail_server"
           ? { state: "fail", text: "No mail routing available" }
           : { state: "unknown", text: "Mail routing could not be confirmed" },
+      { state: "unknown", text: "Individual mailbox existence not verified" },
     ];
 
     for (const row of rows) {

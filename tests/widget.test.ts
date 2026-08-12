@@ -162,6 +162,10 @@ describe("InboxValidWidget", () => {
     const checks = document.querySelector(".iv-feedback__checks")?.textContent;
     expect(checks).toContain("Domain exists");
     expect(checks).toContain("Mail server found: mx.example.com");
+    expect(checks).toContain("Individual mailbox existence not verified");
+    expect(document.querySelector(".iv-feedback")?.textContent).toContain(
+      "Email is plausible — domain-level checks passed.",
+    );
   });
 
   it("distinguishes a nonexistent domain from an unavailable lookup", async () => {

@@ -136,6 +136,8 @@ Example response:
 
 Possible `status` values are `valid`, `invalid`, `disposable`, and `unknown`. Possible non-null `sub_status` values are:
 
+The API retains `status: "valid"` as a transport-level compatibility value, but the widget presents it as **Plausible**. It means syntax, domain, provider, and mail-routing checks passed; it never claims that the individual mailbox exists. Every successful result explicitly shows “Individual mailbox existence not verified.”
+
 `domain_status` is an independent DNS signal:
 
 | Domain status | Meaning |
