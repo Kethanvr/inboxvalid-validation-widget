@@ -4,8 +4,8 @@ A zero-runtime-dependency email-validation widget that enhances existing signup 
 
 ### Project endpoints
 
-- **Demo:** `https://validate.kethanvr.tech` 
-- **Widget bundle:** `https://validate.kethanvr.tech/inboxvalid.js`
+- **Demo:** [validate.kethanvr.tech](https://validate.kethanvr.tech)
+- **Widget bundle:** [validate.kethanvr.tech/inboxvalid.js](https://validate.kethanvr.tech/inboxvalid.js)
 
 ### Tech stack
 
@@ -322,6 +322,7 @@ The design optimizes for a small embeddable product, predictable failure behavio
 | Vanilla TypeScript IIFE widget | Works in existing forms without requiring React, a framework runtime, or a build step | UI is implemented with direct DOM APIs rather than framework components |
 | Immediate browser syntax validation | Fast perceived response and fewer unnecessary API calls | The server repeats syntax validation because client input cannot be trusted |
 | One stateless Vercel function | Low-cost deployment, horizontal scaling, and no server lifecycle to manage | No shared server-side cache in this prototype |
+| No database or authentication layer | Minimal infrastructure, no stored signup data, and fewer privacy concerns | No account history or analytics; there are no persistent entities that require an ER model |
 | Node DNS APIs behind an injected resolver interface | No paid dependency and deterministic unit testing; the resolver can be replaced without changing response mapping | DNS establishes domain and routing plausibility, not mailbox existence |
 | Local disposable-domain module | Transparent, fast, and independently replaceable | The bundled list is illustrative rather than exhaustive |
 | Bounded five-minute browser cache | Removes repeat checks without a database and prevents unbounded memory growth | Cache is per page session and is not shared across users |
