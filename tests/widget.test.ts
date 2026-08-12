@@ -124,7 +124,7 @@ describe("InboxValidWidget", () => {
     await vi.advanceTimersByTimeAsync(2_500);
     expect(widget.currentState).toBe("unknown");
     expect(document.querySelector(".iv-feedback")?.textContent).toContain(
-      "Verification timed out. You can continue.",
+      "Verification unavailable — safe to continue.",
     );
     expect(fetch).not.toHaveBeenCalled();
   });

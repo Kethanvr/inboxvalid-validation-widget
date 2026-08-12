@@ -7,6 +7,15 @@ const demoEmail = document.querySelector<HTMLInputElement>("#work-email");
 const outageControl = document.querySelector<HTMLInputElement>("#simulate-outage");
 const demoWidget = demoEmail ? window.InboxValid.attach(demoEmail) : undefined;
 
+document.querySelectorAll<HTMLButtonElement>("[data-demo-email]").forEach((button) => {
+  button.addEventListener("click", () => {
+    if (!demoEmail || !button.dataset.demoEmail) return;
+    demoEmail.value = button.dataset.demoEmail;
+    demoEmail.dispatchEvent(new Event("input", { bubbles: true }));
+    demoEmail.focus();
+  });
+});
+
 outageControl?.addEventListener("change", () => {
   demoWidget?.setOutageSimulation(outageControl.checked);
 });

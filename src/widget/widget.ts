@@ -80,7 +80,7 @@ export class InboxValidWidget {
 
     const key = cacheKey(parsed.email);
     const cached = this.cache.get(key);
-    if (cached) {
+    if (cached && !this.simulateOutage) {
       this.applyResult(cached);
       return;
     }
@@ -113,12 +113,7 @@ export class InboxValidWidget {
         this.applyResult(result);
       } catch {
         if (version !== this.requestVersion || (controller.signal.aborted && !timedOut)) return;
-        this.setState(
-          "unknown",
-          timedOut
-            ? "Verification timed out. You can continue."
-            : "Verification is unavailable. You can continue.",
-        );
+        this.setState("unknown", "Verification unavailable — safe to continue.");
       } finally {
         if (this.timeoutId) clearTimeout(this.timeoutId);
         if (this.controller === controller) this.controller = undefined;

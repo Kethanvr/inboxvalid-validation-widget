@@ -86,10 +86,10 @@
         <div class="signup-card">
           <div class="signup-card__heading">
             <span class="avatar-stack" aria-hidden="true"><i></i><i></i><i></i></span>
-            <span>Join 2,400+ product teams</span>
+            <span>Interactive email validation demo</span>
           </div>
-          <h3>Create your workspace</h3>
-          <p>Start with a validation-aware signup flow.</p>
+          <h3>Test the validation flow</h3>
+          <p>Try a real address or jump directly to an edge case.</p>
           <form id="signup-form">
             <label for="full-name">Full name</label>
             <input id="full-name" name="name" autocomplete="name" placeholder="Alex Morgan" required />
@@ -104,6 +104,10 @@
               data-inboxvalid
               required
             />
+            <div class="demo-presets" aria-label="Email examples">
+              <button type="button" data-demo-email="kethanvr@gmal.com">Try typo</button>
+              <button type="button" data-demo-email="test@mailinator.com">Try disposable</button>
+            </div>
 
             <button class="button button--primary signup-button" type="submit">
               Submit demo <span aria-hidden="true">→</span>
