@@ -8,7 +8,8 @@
       name="description"
       content="An embeddable, real-time email validation widget for modern forms."
     />
-    <link rel="icon" href="/inboxvalid-logo.png" type="image/png" />
+    <link rel="icon" href="/inboxvalid-favicon.png" type="image/png" sizes="any" />
+    <link rel="apple-touch-icon" href="/inboxvalid-favicon.png" />
     <title>InboxValid Widget — Validate before submit</title>
   </head>
   <body>
@@ -58,13 +59,13 @@
           <div class="mail-card mail-card--main">
             <div class="mail-card__top">
               <span class="mail-icon">@</span>
-              <span class="status-pill"><i></i> Valid</span>
+              <span class="status-pill"><i></i> Looks valid</span>
             </div>
             <p class="mini-label">EMAIL ADDRESS</p>
             <strong>hello@company.com</strong>
             <div class="check-line"><span>✓</span> Syntax is correctly formatted</div>
             <div class="check-line"><span>✓</span> Permanent email provider</div>
-            <div class="check-line"><span>✓</span> Mail server is reachable</div>
+            <div class="check-line"><span>✓</span> Mail server found</div>
           </div>
           <div class="signal-card"><span>✓</span><div><b>Ready to submit</b><small>All domain checks passed</small></div></div>
         </div>
@@ -105,9 +106,14 @@
             />
 
             <button class="button button--primary signup-button" type="submit">
-              Create free workspace <span aria-hidden="true">→</span>
+              Submit demo <span aria-hidden="true">→</span>
             </button>
             <p class="form-terms">No account is created and no signup data is stored.</p>
+            <label class="outage-control" for="simulate-outage">
+              <input id="simulate-outage" type="checkbox" />
+              <span class="outage-control__switch" aria-hidden="true"></span>
+              <span><strong>Simulate verification outage</strong><small>See the widget fail open safely</small></span>
+            </label>
             <div class="form-success" id="form-success" role="status" hidden>
               <span>✓</span>
               <div><strong>Demo submitted successfully</strong><small>No signup data was stored.</small></div>

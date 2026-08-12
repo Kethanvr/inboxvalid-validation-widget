@@ -60,6 +60,17 @@ describe("InboxValidWidget", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it("renders a clickable Did you mean correction for common domain typos", () => {
+    const { input } = setup();
+    input.value = "kethanvr@gmal.com";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    const feedback = document.querySelector(".iv-feedback");
+    const correction = document.querySelector<HTMLButtonElement>(".iv-feedback__suggestion");
+    expect(feedback?.textContent).toContain("Did you mean kethanvr@gmail.com?");
+    correction?.click();
+    expect(input.value).toBe("kethanvr@gmail.com");
+  });
+
   it("starts the remote request after the 200ms debounce", async () => {
     vi.mocked(fetch).mockResolvedValue(fetchResponse(response()));
     const { input, widget } = setup();
@@ -99,6 +110,46 @@ describe("InboxValidWidget", () => {
     await vi.advanceTimersByTimeAsync(2_500);
     expect(widget.currentState).toBe("unknown");
     expect(input.validationMessage).toBe("");
+  });
+
+  it("demonstrates a simulated outage through the real timeout path", async () => {
+    const { input, widget } = setup({ debounceMs: 0, timeoutMs: 2_500 });
+    input.value = "person@example.com";
+    widget.setOutageSimulation(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(widget.currentState).toBe("checking");
+    expect(document.querySelector(".iv-feedback")?.textContent).toContain(
+      "Checking mail routing",
+    );
+    await vi.advanceTimersByTimeAsync(2_500);
+    expect(widget.currentState).toBe("unknown");
+    expect(document.querySelector(".iv-feedback")?.textContent).toContain(
+      "Verification timed out. You can continue.",
+    );
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("uses explicit disposable-email copy", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      fetchResponse(
+        response({
+          email: "test@mailinator.com",
+          domain: "mailinator.com",
+          status: "disposable",
+          sub_status: "disposable_domain",
+          mx_found: null,
+          is_disposable: true,
+        }),
+      ),
+    );
+    const { input, widget } = setup({ debounceMs: 0 });
+    input.value = "test@mailinator.com";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(widget.currentState).toBe("disposable");
+    expect(document.querySelector(".iv-feedback")?.textContent).toContain(
+      "Disposable email detected — use a permanent address.",
+    );
   });
 
   it("prevents stale responses from replacing the latest state", async () => {

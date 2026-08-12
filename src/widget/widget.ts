@@ -9,11 +9,11 @@ export type WidgetState = "idle" | "checking" | VerificationStatus;
 
 const STATE_COPY: Record<WidgetState, { icon: string; message: string }> = {
   idle: { icon: "·", message: "Enter a work email to validate it." },
-  checking: { icon: "", message: "Checking email domain…" },
+  checking: { icon: "", message: "Checking mail routing…" },
   valid: { icon: "✓", message: "Email domain can receive mail." },
   invalid: { icon: "!", message: "This email cannot receive mail." },
-  disposable: { icon: "!", message: "Please use a permanent email address." },
-  unknown: { icon: "?", message: "Verification is unavailable. You can continue." },
+  disposable: { icon: "!", message: "Disposable email detected — use a permanent address." },
+  unknown: { icon: "?", message: "Verification unavailable — safe to continue." },
 };
 
 let feedbackCounter = 0;
@@ -31,6 +31,7 @@ export class InboxValidWidget {
   private activeRequest?: Promise<void>;
   private requestVersion = 0;
   private allowNextSubmit = false;
+  private simulateOutage = false;
   private form?: HTMLFormElement;
 
   constructor(input: HTMLInputElement, options: InboxValidOptions = {}) {
@@ -57,6 +58,11 @@ export class InboxValidWidget {
     this.input.removeEventListener("input", this.handleInput);
     this.form?.removeEventListener("submit", this.handleSubmit);
     this.feedback.remove();
+  }
+
+  setOutageSimulation(enabled: boolean): void {
+    this.simulateOutage = enabled;
+    this.handleInput();
   }
 
   async verifyNow(): Promise<void> {
@@ -92,11 +98,16 @@ export class InboxValidWidget {
       }, this.options.timeoutMs);
 
       try {
-        const result = await requestVerification(
-          this.options.endpoint,
-          parsed.email,
-          controller.signal,
-        );
+        if (this.simulateOutage) {
+          await new Promise<void>((_resolve, reject) => {
+            controller.signal.addEventListener(
+              "abort",
+              () => reject(new DOMException("Simulated outage", "AbortError")),
+              { once: true },
+            );
+          });
+        }
+        const result = await requestVerification(this.options.endpoint, parsed.email, controller.signal);
         if (version !== this.requestVersion || parsed.email !== parseEmail(this.input.value)?.email) return;
         this.cache.set(key, result);
         this.applyResult(result);
@@ -233,13 +244,13 @@ export class InboxValidWidget {
       const suggestion = document.createElement("button");
       suggestion.type = "button";
       suggestion.className = "iv-feedback__suggestion";
-      suggestion.textContent = `Use ${this.suggestion}`;
+      suggestion.textContent = this.suggestion;
       suggestion.addEventListener("click", () => {
         this.input.value = this.suggestion ?? this.input.value;
         this.input.dispatchEvent(new Event("input", { bubbles: true }));
         this.input.focus();
       });
-      text.append(" ", suggestion);
+      text.append(" Did you mean ", suggestion, "?");
     }
   }
 }
