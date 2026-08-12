@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { verifyEmail } from "./_lib/verify-email";
+import { verifyEmail } from "./_lib/verify-email.js";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",

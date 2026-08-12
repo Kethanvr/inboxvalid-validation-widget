@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
-import { verifyEmail } from "./api/_lib/verify-email.ts";
+import { verifyEmail } from "./api/_lib/verify-email.js";
 
 const MAX_DEV_BODY_BYTES = 4_096;
 

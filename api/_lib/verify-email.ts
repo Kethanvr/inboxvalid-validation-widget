@@ -1,8 +1,8 @@
 import { resolve4, resolve6, resolveMx } from "node:dns/promises";
 import type { MxRecord } from "node:dns";
-import { isDisposableDomain } from "../../src/shared/disposable-domains.ts";
-import { parseEmail, suggestEmail } from "../../src/shared/email.ts";
-import type { VerificationResponse } from "../../src/shared/types.ts";
+import { isDisposableDomain } from "../../src/shared/disposable-domains.js";
+import { parseEmail, suggestEmail } from "../../src/shared/email.js";
+import type { VerificationResponse } from "../../src/shared/types.js";
 
 const DNS_TIMEOUT_MS = 2_000;
 const NO_DATA_CODE = "ENODATA";
