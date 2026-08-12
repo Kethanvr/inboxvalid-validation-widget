@@ -1,8 +1,8 @@
 import { resolve4, resolve6, resolveMx } from "node:dns/promises";
 import type { MxRecord } from "node:dns";
-import { isDisposableDomain } from "../../src/shared/disposable-domains";
-import { parseEmail, suggestEmail } from "../../src/shared/email";
-import type { VerificationResponse } from "../../src/shared/types";
+import { isDisposableDomain } from "../../src/shared/disposable-domains.ts";
+import { parseEmail, suggestEmail } from "../../src/shared/email.ts";
+import type { VerificationResponse } from "../../src/shared/types.ts";
 
 const DNS_TIMEOUT_MS = 2_000;
 const ABSENT_DNS_CODES = new Set(["ENODATA", "ENOTFOUND"]);

@@ -117,7 +117,7 @@ describe("InboxValidWidget", () => {
     await vi.advanceTimersByTimeAsync(0);
 
     resolveSecond(fetchResponse(response({ email: "second@example.com", status: "valid" })));
-    await vi.runAllTicks();
+    await vi.advanceTimersByTimeAsync(0);
     resolveFirst(
       fetchResponse(
         response({
@@ -127,7 +127,7 @@ describe("InboxValidWidget", () => {
         }),
       ),
     );
-    await vi.runAllTicks();
+    await vi.advanceTimersByTimeAsync(0);
     expect(widget.currentState).toBe("valid");
   });
 
@@ -142,7 +142,7 @@ describe("InboxValidWidget", () => {
     form.dispatchEvent(submitEvent);
     expect(submitEvent.defaultPrevented).toBe(true);
     resolveRequest(fetchResponse(response()));
-    await vi.runAllTicks();
+    await vi.advanceTimersByTimeAsync(0);
     expect(requestSubmit).toHaveBeenCalledOnce();
   });
 
