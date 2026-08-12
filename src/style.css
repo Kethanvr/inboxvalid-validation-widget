@@ -37,7 +37,7 @@ a { color: inherit; }
 }
 .brand { display: inline-flex; align-items: center; gap: 0.65rem; color: var(--ink); font-weight: 700; text-decoration: none; letter-spacing: -0.02em; }
 .brand em { color: var(--violet); font-style: normal; font-weight: 500; }
-.brand__mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; background: var(--violet); color: white; font-size: 0.7rem; letter-spacing: -0.05em; box-shadow: 0 7px 20px #635bdf35; }
+.brand__logo { width: 42px; height: 42px; border-radius: 10px; object-fit: cover; object-position: 50% 38%; box-shadow: 0 7px 20px #635bdf2b; }
 nav { display: flex; gap: 2rem; }
 nav a { color: #555e77; font-size: 0.88rem; font-weight: 600; text-decoration: none; }
 nav a:hover { color: var(--violet); }

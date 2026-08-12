@@ -2,8 +2,6 @@
 
 A zero-runtime-dependency email-validation widget and demonstration website. It adds immediate syntax feedback to an existing email input, then checks disposable providers and real DNS mail-routing signals through a small API.
 
-> Candidate prototype for technical evaluation. This repository is not an official InboxValid product and contains no confidential assignment material.
-
 ## Run locally
 
 Requirements: Node.js 20 or newer and npm.
