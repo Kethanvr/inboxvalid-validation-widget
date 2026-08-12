@@ -1,0 +1,42 @@
+interface CacheEntry<T> {
+  expiresAt: number;
+  value: T;
+}
+
+export class ExpiringCache<T> {
+  private readonly entries = new Map<string, CacheEntry<T>>();
+
+  constructor(
+    private readonly ttlMs: number,
+    private readonly maxEntries = 100,
+    private readonly now: () => number = Date.now,
+  ) {}
+
+  get(key: string): T | undefined {
+    const entry = this.entries.get(key);
+    if (!entry) return undefined;
+    if (entry.expiresAt <= this.now()) {
+      this.entries.delete(key);
+      return undefined;
+    }
+
+    // Refresh insertion order so frequently used values survive eviction.
+    this.entries.delete(key);
+    this.entries.set(key, entry);
+    return entry.value;
+  }
+
+  set(key: string, value: T): void {
+    this.entries.delete(key);
+    this.entries.set(key, { value, expiresAt: this.now() + this.ttlMs });
+    while (this.entries.size > this.maxEntries) {
+      const oldestKey = this.entries.keys().next().value as string | undefined;
+      if (oldestKey === undefined) break;
+      this.entries.delete(oldestKey);
+    }
+  }
+
+  clear(): void {
+    this.entries.clear();
+  }
+}
