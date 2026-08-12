@@ -7,6 +7,24 @@ A zero-runtime-dependency email-validation widget that enhances existing signup 
 - **Demo:** [validate.kethanvr.tech](https://validate.kethanvr.tech)
 - **Widget bundle:** [validate.kethanvr.tech/inboxvalid.js](https://validate.kethanvr.tech/inboxvalid.js)
 
+<a href="public/Screenshot%20from%202026-08-12%2015-41-34.png">
+  <img src="public/Screenshot%20from%202026-08-12%2015-41-34.png" alt="InboxValid Widget demo landing page" width="100%">
+</a>
+
+## Product walkthrough
+
+The public demo exposes the real widget lifecycle, edge states, integration contract, and prototype boundaries. Select any screenshot to open the full-resolution image.
+
+| Live validation                                                     | Validation pipeline                                                 |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| <a href="public/Screenshot%20from%202026-08-12%2015-53-26.png"></a> | <a href="public/Screenshot%20from%202026-08-12%2015-53-33.png"></a> |
+| **Six explicit states**                                       | **One-attribute integration**                                 |
+| <a href="public/Screenshot%20from%202026-08-12%2015-53-50.png"></a> | <a href="public/Screenshot%20from%202026-08-12%2015-53-56.png"></a> |
+
+<a href="public/Screenshot from 2026-08-12 15-53-26.png"> </a>
+
+The final view makes the product boundary explicit: the prototype validates syntax, domain existence, provider type, and DNS mail routing, but does not claim that an individual mailbox exists.
+
 ### Tech stack
 
 TypeScript · Vanilla DOM · Vite · Node.js · Vercel Functions · DNS · Vitest
@@ -185,12 +203,12 @@ sequenceDiagram
 
 ### Options
 
-| JavaScript | Data attribute | Default | Accepted range |
-| --- | --- | ---: | ---: |
-| `endpoint` | `data-endpoint` | Script-origin `/api/verify` | Absolute or relative URL |
-| `debounceMs` | `data-debounce` | `200` | 0–5,000 ms |
-| `timeoutMs` | `data-timeout` | `2,500` | 100–30,000 ms |
-| `cacheTtlMs` | `data-cache-ttl` | `300,000` | 0–86,400,000 ms |
+| JavaScript     | Data attribute     |                      Default |           Accepted range |
+| -------------- | ------------------ | ---------------------------: | -----------------------: |
+| `endpoint`   | `data-endpoint`  | Script-origin`/api/verify` | Absolute or relative URL |
+| `debounceMs` | `data-debounce`  |                      `200` |              0–5,000 ms |
+| `timeoutMs`  | `data-timeout`   |                    `2,500` |           100–30,000 ms |
+| `cacheTtlMs` | `data-cache-ttl` |                  `300,000` |         0–86,400,000 ms |
 
 ## Verification API
 
@@ -225,20 +243,20 @@ The API retains `status: "valid"` as a transport-level compatibility value, but 
 
 `domain_status` is an independent DNS signal:
 
-| Domain status | Meaning |
-| --- | --- |
-| `exists` | DNS confirmed the name, even if it has no mail-routing records |
-| `not_found` | DNS returned NXDOMAIN / `ENOTFOUND` |
-| `unknown` | A timeout or operational DNS failure prevented confirmation |
+| Domain status | Meaning                                                        |
+| ------------- | -------------------------------------------------------------- |
+| `exists`    | DNS confirmed the name, even if it has no mail-routing records |
+| `not_found` | DNS returned NXDOMAIN /`ENOTFOUND`                           |
+| `unknown`   | A timeout or operational DNS failure prevented confirmation    |
 
-| Sub-status | Meaning | Form decision |
-| --- | --- | --- |
-| `invalid_syntax` | Address structure is malformed | Block |
-| `disposable_domain` | Known throwaway provider | Block |
-| `null_mx` | Domain explicitly declares that it accepts no email | Block |
-| `no_mail_server` | No MX, A, or AAAA route exists | Block |
-| `implicit_mx` | No MX, but an A/AAAA fallback exists | Allow |
-| `dns_unavailable` | DNS timed out or failed operationally | Allow |
+| Sub-status            | Meaning                                             | Form decision |
+| --------------------- | --------------------------------------------------- | ------------- |
+| `invalid_syntax`    | Address structure is malformed                      | Block         |
+| `disposable_domain` | Known throwaway provider                            | Block         |
+| `null_mx`           | Domain explicitly declares that it accepts no email | Block         |
+| `no_mail_server`    | No MX, A, or AAAA route exists                      | Block         |
+| `implicit_mx`       | No MX, but an A/AAAA fallback exists                | Allow         |
+| `dns_unavailable`   | DNS timed out or failed operationally               | Allow         |
 
 The endpoint supports credential-free CORS for third-party embedding. Validation outcomes use HTTP 200; malformed bodies use 400, and unsupported methods use 405.
 
@@ -317,19 +335,19 @@ tests/                  Unit and DOM integration tests
 
 The design optimizes for a small embeddable product, predictable failure behavior, and independently replaceable pipeline stages. It deliberately avoids infrastructure that does not improve the domain-level validation goal.
 
-| Decision | Optimized for | Deliberate trade-off |
-| --- | --- | --- |
-| Vanilla TypeScript IIFE widget | Works in existing forms without requiring React, a framework runtime, or a build step | UI is implemented with direct DOM APIs rather than framework components |
-| Immediate browser syntax validation | Fast perceived response and fewer unnecessary API calls | The server repeats syntax validation because client input cannot be trusted |
-| One stateless Vercel function | Low-cost deployment, horizontal scaling, and no server lifecycle to manage | No shared server-side cache in this prototype |
-| No database or authentication layer | Minimal infrastructure, no stored signup data, and fewer privacy concerns | No account history or analytics; there are no persistent entities that require an ER model |
-| Node DNS APIs behind an injected resolver interface | No paid dependency and deterministic unit testing; the resolver can be replaced without changing response mapping | DNS establishes domain and routing plausibility, not mailbox existence |
-| Local disposable-domain module | Transparent, fast, and independently replaceable | The bundled list is illustrative rather than exhaustive |
-| Bounded five-minute browser cache | Removes repeat checks without a database and prevents unbounded memory growth | Cache is per page session and is not shared across users |
-| `AbortController`, request versions, and debounce | Prevents stale responses and excess requests during typing | Adds a small amount of client state-management code |
-| 2.5-second fail-open timeout | A verification outage cannot break the host website's signup path | Some uncertain addresses are intentionally allowed |
-| Credential-free CORS | The script works when embedded on a different origin | A production public endpoint needs rate limiting, monitoring, and an abuse-control policy |
-| InboxValid-style response fields | A production verifier can be introduced through an adapter instead of a widget rewrite | `status: "valid"` remains in the transport contract while the UI correctly says **Plausible** |
+| Decision                                            | Optimized for                                                                                                     | Deliberate trade-off                                                                                  |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Vanilla TypeScript IIFE widget                      | Works in existing forms without requiring React, a framework runtime, or a build step                             | UI is implemented with direct DOM APIs rather than framework components                               |
+| Immediate browser syntax validation                 | Fast perceived response and fewer unnecessary API calls                                                           | The server repeats syntax validation because client input cannot be trusted                           |
+| One stateless Vercel function                       | Low-cost deployment, horizontal scaling, and no server lifecycle to manage                                        | No shared server-side cache in this prototype                                                         |
+| No database or authentication layer                 | Minimal infrastructure, no stored signup data, and fewer privacy concerns                                         | No account history or analytics; there are no persistent entities that require an ER model            |
+| Node DNS APIs behind an injected resolver interface | No paid dependency and deterministic unit testing; the resolver can be replaced without changing response mapping | DNS establishes domain and routing plausibility, not mailbox existence                                |
+| Local disposable-domain module                      | Transparent, fast, and independently replaceable                                                                  | The bundled list is illustrative rather than exhaustive                                               |
+| Bounded five-minute browser cache                   | Removes repeat checks without a database and prevents unbounded memory growth                                     | Cache is per page session and is not shared across users                                              |
+| `AbortController`, request versions, and debounce | Prevents stale responses and excess requests during typing                                                        | Adds a small amount of client state-management code                                                   |
+| 2.5-second fail-open timeout                        | A verification outage cannot break the host website's signup path                                                 | Some uncertain addresses are intentionally allowed                                                    |
+| Credential-free CORS                                | The script works when embedded on a different origin                                                              | A production public endpoint needs rate limiting, monitoring, and an abuse-control policy             |
+| InboxValid-style response fields                    | A production verifier can be introduced through an adapter instead of a widget rewrite                            | `status: "valid"` remains in the transport contract while the UI correctly says **Plausible** |
 
 ### Why the pipeline is modular
 
