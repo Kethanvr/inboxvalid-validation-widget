@@ -274,7 +274,7 @@ export class InboxValidWidget {
         : result.domain_status === "not_found" || result.sub_status === "null_mx" || result.sub_status === "no_mail_server"
           ? { state: "fail", text: "No mail routing available" }
           : { state: "unknown", text: "Mail routing could not be confirmed" },
-      { state: "unknown", text: "Individual mailbox existence not verified" },
+      { state: "unknown", text: "Mailbox existence not checked in this prototype" },
     ];
 
     for (const row of rows) {

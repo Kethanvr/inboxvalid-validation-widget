@@ -136,7 +136,7 @@ Example response:
 
 Possible `status` values are `valid`, `invalid`, `disposable`, and `unknown`. Possible non-null `sub_status` values are:
 
-The API retains `status: "valid"` as a transport-level compatibility value, but the widget presents it as **Plausible**. It means syntax, domain, provider, and mail-routing checks passed; it never claims that the individual mailbox exists. Every successful result explicitly shows “Individual mailbox existence not verified.”
+The API retains `status: "valid"` as a transport-level compatibility value, but the widget presents it as **Plausible**. It means syntax, domain, provider, and mail-routing checks passed; it never claims that the individual mailbox exists. Every successful result explicitly shows “Mailbox existence not checked in this prototype.”
 
 `domain_status` is an independent DNS signal:
 
@@ -192,6 +192,70 @@ src/
   style.css             Demo website design
 tests/                  Unit and DOM integration tests
 ```
+
+## Architecture decisions and trade-offs
+
+The design optimizes for a small embeddable product, predictable failure behavior, and independently replaceable pipeline stages. It deliberately avoids infrastructure that does not improve the domain-level validation goal.
+
+| Decision | Optimized for | Deliberate trade-off |
+| --- | --- | --- |
+| Vanilla TypeScript IIFE widget | Works in existing forms without requiring React, a framework runtime, or a build step | UI is implemented with direct DOM APIs rather than framework components |
+| Immediate browser syntax validation | Fast perceived response and fewer unnecessary API calls | The server repeats syntax validation because client input cannot be trusted |
+| One stateless Vercel function | Low-cost deployment, horizontal scaling, and no server lifecycle to manage | No shared server-side cache in this prototype |
+| Node DNS APIs behind an injected resolver interface | No paid dependency and deterministic unit testing; the resolver can be replaced without changing response mapping | DNS establishes domain and routing plausibility, not mailbox existence |
+| Local disposable-domain module | Transparent, fast, and independently replaceable | The bundled list is illustrative rather than exhaustive |
+| Bounded five-minute browser cache | Removes repeat checks without a database and prevents unbounded memory growth | Cache is per page session and is not shared across users |
+| `AbortController`, request versions, and debounce | Prevents stale responses and excess requests during typing | Adds a small amount of client state-management code |
+| 2.5-second fail-open timeout | A verification outage cannot break the host website's signup path | Some uncertain addresses are intentionally allowed |
+| Credential-free CORS | The script works when embedded on a different origin | A production public endpoint needs rate limiting, monitoring, and an abuse-control policy |
+| InboxValid-style response fields | A production verifier can be introduced through an adapter instead of a widget rewrite | `status: "valid"` remains in the transport contract while the UI correctly says **Plausible** |
+
+### Why the pipeline is modular
+
+Each responsibility has a narrow boundary:
+
+```text
+email parsing + suggestions
+        ↓
+widget state + form integration
+        ↓
+HTTP client + timeout/cancellation
+        ↓
+verification response contract
+        ↓
+disposable provider check + DNS resolver
+```
+
+- Email parsing, the disposable dataset, cache, HTTP client, UI controller, shared contract, and DNS verification live in separate modules.
+- The widget consumes `VerificationResponse` rather than DNS implementation details.
+- The DNS verifier accepts a `DnsResolver`, so tests use deterministic fakes and a future managed DNS service can be substituted without changing business rules.
+- Endpoint discovery and explicit configuration allow the widget and API to be deployed together or independently.
+
+### Scaling characteristics
+
+The API is stateless and performs no database writes, so multiple instances can handle requests without coordination. Browser debounce, cancellation, and caching reduce avoidable traffic before it reaches the API. The current design is appropriate for a low-cost demonstration and can grow without changing the widget contract.
+
+At larger volume, preserve the existing interfaces and add:
+
+1. Rate limiting and abuse monitoring at the public API boundary.
+2. A shared TTL-aware DNS result cache and in-flight request coalescing by domain.
+3. A maintained disposable-provider feed behind the existing module interface.
+4. Metrics for latency, timeout rate, DNS outcomes, and fail-open frequency.
+5. A production verification adapter for SMTP, catch-all, and risk signals when reliable infrastructure is available.
+
+## Assumptions
+
+- A **Plausible** result is domain-level evidence only; mailbox existence is not checked in this prototype.
+- `ENODATA` means the DNS name exists but lacks the requested record type; only NXDOMAIN / `ENOTFOUND` is classified as `not_found`.
+- Temporary DNS and network failures must not block a legitimate signup.
+- A domain with no MX may still use the standards-defined A/AAAA fallback, which is reported as plausible rather than fully confirmed.
+- The demo stores no submitted form data and does not require authentication or a database.
+
+## Verification coverage
+
+The automated suite covers parsing, normalization, typo suggestions, cache expiry and eviction, configuration precedence, debounce, cancellation, stale responses, submission resumption, timeout/fail-open behavior, accessible status output, CORS, malformed requests, and DNS cases including MX priority, null MX, ENODATA, NXDOMAIN, A/AAAA fallback, SERVFAIL, and timeout.
+
+The production build is also checked as a standalone IIFE from a separate local origin to verify that script-origin endpoint discovery and cross-origin API requests work outside the demo page.
 
 ## Deploy to Vercel
 
